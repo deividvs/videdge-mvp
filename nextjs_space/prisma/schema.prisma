@@ -23,6 +23,10 @@ model User {
   projects      Project[]
   accounts      Account[]
   sessions      Session[]
+  youtubeSearches    YouTubeSearch[]
+  youtubeVideos      YouTubeVideo[]
+  youtubeChannels    YouTubeChannel[]
+  nicheOpportunities NicheOpportunity[]
 }
 
 model Account {
@@ -132,4 +136,122 @@ model Project {
 
   @@index([userId])
   @@index([status])
+}
+
+model YouTubeSearch {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  query     String
+  country   String?
+  language  String?
+  period    String?
+  category  String?
+  resultCount Int    @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model YouTubeVideo {
+  id                    String   @id @default(cuid())
+  userId                String
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  youtubeVideoId        String
+  title                 String
+  description           String?  @db.Text
+  videoUrl              String
+  thumbnailUrl          String?
+  channelId             String?
+  channelTitle          String?
+  publishedAt           DateTime?
+  viewCount             Int      @default(0)
+  likeCount             Int      @default(0)
+  commentCount          Int      @default(0)
+  duration              String?
+  tags                  String?  @db.Text
+  viralScore            Int      @default(0)
+  viewsPerDay           Float    @default(0)
+  viewsSubscriberRatio  Float    @default(0)
+  engagementRate        Float    @default(0)
+  detectedNiche         String?
+  searchQuery           String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@unique([userId, youtubeVideoId])
+  @@index([userId])
+  @@index([viralScore])
+}
+
+model YouTubeChannel {
+  id                    String   @id @default(cuid())
+  userId                String
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  youtubeChannelId      String
+  title                 String
+  channelUrl            String?
+  description           String?  @db.Text
+  subscriberCount       Int      @default(0)
+  totalViewCount        BigInt   @default(0)
+  videoCount            Int      @default(0)
+  country               String?
+  thumbnailUrl          String?
+  estimatedMonthlyViews Int?
+  revenueConservative   Float?
+  revenueAverage        Float?
+  revenueAggressive     Float?
+  revenueConfidence     String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@unique([userId, youtubeChannelId])
+  @@index([userId])
+}
+
+model NicheOpportunity {
+  id                    String   @id @default(cuid())
+  userId                String
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  niche                 String
+  subniche              String?
+  description           String?  @db.Text
+  referenceVideoId      String?
+  referenceVideoTitle   String?
+  referenceChannelTitle String?
+  averageViews          Int?
+  averageViewsPerDay    Float?
+  competitionLevel      String?
+  opportunityLevel      String?
+  monetizationPotential String?
+  productionDifficulty  String?
+  mainChannels          String?  @db.Text
+  topVideos             String?  @db.Text
+  aiAnalysis            String?  @db.Text
+  viralScore            Int?
+  estimatedRevenue      String?
+  suggestedAngle        String?  @db.Text
+  risks                 String?  @db.Text
+  derivedIdeas          String?  @db.Text
+  status                String   @default("nova")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+model RPMBenchmark {
+  id              String   @id @default(cuid())
+  niche           String
+  country         String   @default("global")
+  language        String   @default("all")
+  rpmConservative Float
+  rpmAverage      Float
+  rpmAggressive   Float
+  sourceNote      String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([niche, country, language])
 }

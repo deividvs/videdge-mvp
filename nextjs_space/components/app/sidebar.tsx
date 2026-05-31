@@ -4,11 +4,13 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, Lightbulb, FileText, Kanban, FolderKanban, Settings, LogOut, Zap, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Lightbulb, FileText, Kanban, FolderKanban, Settings, LogOut, Zap, Menu, X, TrendingUp, Bookmark } from 'lucide-react';
 import { useState } from 'react';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/market-intelligence', label: 'Market Intelligence', icon: TrendingUp },
+  { href: '/opportunities', label: 'Oportunidades', icon: Bookmark },
   { href: '/ideas', label: 'Video Ideas', icon: Lightbulb },
   { href: '/scripts', label: 'Scripts', icon: FileText },
   { href: '/board', label: 'Production Board', icon: Kanban },
