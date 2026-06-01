@@ -3,8 +3,23 @@
  * Handles search, video stats, and channel stats
  */
 
+import { prisma } from '@/lib/prisma';
+
 const YOUTUBE_API_BASE = 'https://www.googleapis.com/youtube/v3';
-const API_KEY = process.env.YOUTUBE_API_KEY;
+
+/**
+ * Get the YouTube API key for a user.
+ * Uses user's custom key if set, otherwise falls back to env var.
+ */
+export async function getYoutubeApiKey(userId: string): Promise<string> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { youtubeApiKey: true },
+  });
+  const key = user?.youtubeApiKey || process.env.YOUTUBE_API_KEY;
+  if (!key) throw new Error('YouTube API key não configurada. Vá em Settings para adicionar.');
+  return key;
+}
 
 export interface YouTubeSearchResult {
   videoId: string;
@@ -60,8 +75,10 @@ export async function searchYouTubeVideos(
     relevanceLanguage?: string;
     publishedAfter?: string;
     order?: string;
+    apiKey?: string;
   } = {}
 ): Promise<YouTubeSearchResult[]> {
+  const API_KEY = options.apiKey || process.env.YOUTUBE_API_KEY;
   if (!API_KEY) throw new Error('YouTube API key not configured');
 
   const params = new URLSearchParams({
@@ -95,7 +112,8 @@ export async function searchYouTubeVideos(
   }));
 }
 
-export async function getVideoStats(videoIds: string[]): Promise<YouTubeVideoStats[]> {
+export async function getVideoStats(videoIds: string[], apiKey?: string): Promise<YouTubeVideoStats[]> {
+  const API_KEY = apiKey || process.env.YOUTUBE_API_KEY;
   if (!API_KEY) throw new Error('YouTube API key not configured');
   if (videoIds.length === 0) return [];
 
@@ -136,7 +154,8 @@ export async function getVideoStats(videoIds: string[]): Promise<YouTubeVideoSta
   return results;
 }
 
-export async function getChannelStats(channelIds: string[]): Promise<YouTubeChannelStats[]> {
+export async function getChannelStats(channelIds: string[], apiKey?: string): Promise<YouTubeChannelStats[]> {
+  const API_KEY = apiKey || process.env.YOUTUBE_API_KEY;
   if (!API_KEY) throw new Error('YouTube API key not configured');
   if (channelIds.length === 0) return [];
 

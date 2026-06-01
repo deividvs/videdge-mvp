@@ -16,12 +16,13 @@ export async function GET() {
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { apiProvider: true, apiKey: true },
+      select: { apiProvider: true, apiKey: true, youtubeApiKey: true },
     });
 
     return new Response(JSON.stringify({
       apiProvider: user?.apiProvider || null,
       hasApiKey: !!user?.apiKey,
+      hasYoutubeApiKey: !!user?.youtubeApiKey,
     }), { status: 200, headers: { 'Content-Type': 'application/json' } });
   } catch (error: any) {
     console.error('Settings GET error:', error);
@@ -39,7 +40,7 @@ export async function PUT(request: NextRequest) {
     if (!userId) return new Response(JSON.stringify({ error: 'Não autenticado' }), { status: 401 });
 
     const body = await request.json();
-    const { apiProvider, apiKey } = body;
+    const { apiProvider, apiKey, youtubeApiKey } = body;
 
     const updateData: any = {};
 
@@ -49,6 +50,10 @@ export async function PUT(request: NextRequest) {
 
     if (apiKey !== undefined) {
       updateData.apiKey = apiKey || null;
+    }
+
+    if (youtubeApiKey !== undefined) {
+      updateData.youtubeApiKey = youtubeApiKey || null;
     }
 
     // If clearing provider, also clear key

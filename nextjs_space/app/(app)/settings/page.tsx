@@ -2,7 +2,7 @@
 
 import { useSession } from 'next-auth/react';
 import { useState, useEffect, useCallback } from 'react';
-import { Settings, User, Save, Loader2, Key, Eye, EyeOff, CheckCircle, AlertCircle, Trash2 } from 'lucide-react';
+import { Settings, User, Save, Loader2, Key, Eye, EyeOff, CheckCircle, AlertCircle, Trash2, Youtube } from 'lucide-react';
 import { toast } from 'sonner';
 
 const API_PROVIDERS = [
@@ -20,6 +20,10 @@ export default function SettingsPage() {
   const [hasExistingKey, setHasExistingKey] = useState(false);
   const [showKey, setShowKey] = useState(false);
   const [savingApi, setSavingApi] = useState(false);
+  const [youtubeApiKey, setYoutubeApiKey] = useState('');
+  const [hasYoutubeKey, setHasYoutubeKey] = useState(false);
+  const [showYoutubeKey, setShowYoutubeKey] = useState(false);
+  const [savingYoutube, setSavingYoutube] = useState(false);
 
   const fetchApiSettings = useCallback(async () => {
     try {
@@ -28,6 +32,7 @@ export default function SettingsPage() {
         const data = await res.json();
         setApiProvider(data.apiProvider || '');
         setHasExistingKey(data.hasApiKey);
+        setHasYoutubeKey(data.hasYoutubeApiKey || false);
       }
     } catch (err) {
       console.error('Error fetching API settings:', err);
@@ -67,6 +72,50 @@ export default function SettingsPage() {
       toast.error(err.message || 'Erro ao salvar configurações');
     } finally {
       setSavingApi(false);
+    }
+  };
+
+  const handleSaveYoutubeKey = async () => {
+    if (!youtubeApiKey && !hasYoutubeKey) {
+      toast.error('Insira sua chave de API do YouTube');
+      return;
+    }
+    setSavingYoutube(true);
+    try {
+      const body: any = {};
+      if (youtubeApiKey) body.youtubeApiKey = youtubeApiKey;
+      const res = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error('Erro ao salvar');
+      toast.success('Chave do YouTube salva!');
+      setYoutubeApiKey('');
+      setHasYoutubeKey(true);
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao salvar chave');
+    } finally {
+      setSavingYoutube(false);
+    }
+  };
+
+  const handleRemoveYoutubeKey = async () => {
+    setSavingYoutube(true);
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ youtubeApiKey: null }),
+      });
+      if (!res.ok) throw new Error('Erro ao remover');
+      setYoutubeApiKey('');
+      setHasYoutubeKey(false);
+      toast.success('Chave do YouTube removida. Usando chave padrão da plataforma.');
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao remover chave');
+    } finally {
+      setSavingYoutube(false);
     }
   };
 
@@ -210,6 +259,84 @@ export default function SettingsPage() {
                 <button
                   onClick={handleRemoveKey}
                   disabled={savingApi}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-sm font-medium rounded-md border border-red-500/20 transition-colors disabled:opacity-50"
+                >
+                  <Trash2 className="h-4 w-4" /> Remover Chave
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+      {/* YouTube API Key */}
+      <div className="bg-card rounded-lg border border-border p-6" style={{ boxShadow: 'var(--shadow-md)' }}>
+        <div className="flex items-center gap-3 mb-2">
+          <div className="p-2 rounded-md bg-red-500/10"><Youtube className="h-5 w-5 text-red-400" /></div>
+          <h2 className="text-lg font-semibold">Chave de API — YouTube</h2>
+        </div>
+        <p className="text-sm text-muted-foreground mb-6">
+          Configure sua própria chave da YouTube Data API v3 para pesquisas e análises.
+          Se não configurar, será usada a chave padrão da plataforma.
+        </p>
+
+        {loadingApi ? (
+          <div className="flex items-center gap-2 text-muted-foreground py-4">
+            <Loader2 className="h-4 w-4 animate-spin" /> Carregando...
+          </div>
+        ) : (
+          <div className="space-y-5 max-w-lg">
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Chave de API</label>
+              <div className="relative">
+                <input
+                  type={showYoutubeKey ? 'text' : 'password'}
+                  value={youtubeApiKey}
+                  onChange={(e) => setYoutubeApiKey(e.target.value)}
+                  placeholder={hasYoutubeKey ? '••••••••••••••••  (chave salva)' : 'AIzaSy...'}
+                  className="w-full px-4 py-2.5 pr-12 bg-muted border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-red-500/50 font-mono text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowYoutubeKey(!showYoutubeKey)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {showYoutubeKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+
+              {hasYoutubeKey && (
+                <div className="flex items-center gap-1.5 mt-2 text-xs text-red-400">
+                  <CheckCircle className="h-3.5 w-3.5" />
+                  Chave configurada — deixe em branco para manter a atual
+                </div>
+              )}
+
+              <div className="flex items-start gap-1.5 mt-2 text-xs text-muted-foreground">
+                <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                <span>
+                  Obtenha sua chave em{' '}
+                  <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" className="text-red-400 hover:underline">
+                    Google Cloud Console → Credenciais
+                  </a>.
+                  Ative a YouTube Data API v3 no seu projeto.
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 pt-1">
+              <button
+                onClick={handleSaveYoutubeKey}
+                disabled={savingYoutube}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-500 text-white text-sm font-medium rounded-md transition-colors disabled:opacity-50"
+              >
+                {savingYoutube ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Salvar Chave
+              </button>
+
+              {hasYoutubeKey && (
+                <button
+                  onClick={handleRemoveYoutubeKey}
+                  disabled={savingYoutube}
                   className="inline-flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-sm font-medium rounded-md border border-red-500/20 transition-colors disabled:opacity-50"
                 >
                   <Trash2 className="h-4 w-4" /> Remover Chave

@@ -33,6 +33,7 @@ model User {
   growthPlans        GrowthPlan[]
   apiProvider        String?
   apiKey             String?
+  youtubeApiKey      String?
   youtubeComments    YouTubeComment[]
   commentAnalyses    CommentAnalysis[]
   infoproductIdeas   InfoproductIdea[]

@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { searchYouTubeVideos, getVideoStats, getChannelStats, getPublishedAfterDate } from '@/lib/youtube';
+import { searchYouTubeVideos, getVideoStats, getChannelStats, getPublishedAfterDate, getYoutubeApiKey } from '@/lib/youtube';
 import { calculateViralScore, calculateViewsPerDay, calculateViewsSubscriberRatio, calculateEngagementRate } from '@/lib/viral-score';
 import { getRPMForNiche, estimateRevenue } from '@/lib/revenue-estimator';
 
@@ -26,6 +26,9 @@ export async function POST(request: NextRequest) {
       searchQuery = `${query} ${category}`;
     }
 
+    // Get user's YouTube API key
+    const ytApiKey = await getYoutubeApiKey(userId);
+
     // Search YouTube
     const publishedAfter = period ? getPublishedAfterDate(period) : undefined;
     const searchResults = await searchYouTubeVideos(searchQuery, {
@@ -34,6 +37,7 @@ export async function POST(request: NextRequest) {
       relevanceLanguage: language || undefined,
       publishedAfter,
       order: 'viewCount',
+      apiKey: ytApiKey,
     });
 
     if (searchResults.length === 0) {
@@ -42,11 +46,11 @@ export async function POST(request: NextRequest) {
 
     // Get video stats
     const videoIds = searchResults.map(v => v.videoId);
-    const videoStats = await getVideoStats(videoIds);
+    const videoStats = await getVideoStats(videoIds, ytApiKey);
 
     // Get unique channel stats
     const uniqueChannelIds = [...new Set(videoStats.map(v => v.channelId).filter(Boolean))];
-    const channelStats = await getChannelStats(uniqueChannelIds);
+    const channelStats = await getChannelStats(uniqueChannelIds, ytApiKey);
     const channelMap = new Map(channelStats.map(c => [c.channelId, c]));
 
     // Calculate metrics for each video

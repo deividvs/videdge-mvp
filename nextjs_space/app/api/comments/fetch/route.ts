@@ -5,6 +5,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { fetchVideoComments, cleanCommentsForAnalysis } from '@/lib/youtube-comments';
+import { getYoutubeApiKey } from '@/lib/youtube';
 
 export async function POST(request: NextRequest) {
   try {
@@ -48,8 +49,11 @@ export async function POST(request: NextRequest) {
       }), { status: 200, headers: { 'Content-Type': 'application/json' } });
     }
 
+    // Get user's YouTube API key
+    const ytApiKey = await getYoutubeApiKey(userId);
+
     // Fetch fresh comments from YouTube
-    const result = await fetchVideoComments(videoId, maxComments);
+    const result = await fetchVideoComments(videoId, maxComments, ytApiKey);
     
     if (result.comments.length === 0) {
       return new Response(JSON.stringify({

@@ -4,7 +4,6 @@
  */
 
 const YOUTUBE_API_BASE = 'https://www.googleapis.com/youtube/v3';
-const API_KEY = process.env.YOUTUBE_API_KEY;
 
 export interface YouTubeCommentData {
   commentId: string;
@@ -30,9 +29,11 @@ export interface FetchCommentsResult {
  */
 export async function fetchVideoComments(
   videoId: string,
-  maxComments: number = 200
+  maxComments: number = 200,
+  apiKey?: string
 ): Promise<FetchCommentsResult> {
-  if (!API_KEY) throw new Error('YOUTUBE_API_KEY não configurada');
+  const API_KEY = apiKey || process.env.YOUTUBE_API_KEY;
+  if (!API_KEY) throw new Error('YouTube API key não configurada. Vá em Settings para adicionar.');
 
   const allComments: YouTubeCommentData[] = [];
   let nextPageToken: string | undefined;
