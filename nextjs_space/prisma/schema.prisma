@@ -27,6 +27,10 @@ model User {
   youtubeVideos      YouTubeVideo[]
   youtubeChannels    YouTubeChannel[]
   nicheOpportunities NicheOpportunity[]
+  pipelineSessions   PipelineSession[]
+  thumbnailConcepts  ThumbnailConcept[]
+  patternAnalyses    PatternAnalysis[]
+  growthPlans        GrowthPlan[]
 }
 
 model Account {
@@ -254,4 +258,86 @@ model RPMBenchmark {
   updatedAt       DateTime @updatedAt
 
   @@unique([niche, country, language])
+}
+
+model PipelineSession {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  niche           String
+  country         String?
+  language        String?
+  audience        String?
+  channelType     String?
+  channelGoal     String?
+  videoDuration   String?
+  contentTone     String?
+  currentStage    Int      @default(1)
+  youtubeData     String?  @db.Text
+  stage1Result    String?  @db.Text
+  stage2Result    String?  @db.Text
+  stage3Result    String?  @db.Text
+  stage4Result    String?  @db.Text
+  stage5Result    String?  @db.Text
+  selectedIdeaIdx Int?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model ThumbnailConcept {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  videoTitle        String
+  niche             String
+  emotion           String?
+  style             String?
+  conceptName       String
+  visualIdea        String   @db.Text
+  thumbnailText     String?
+  emotionGenerated  String?
+  mainElements      String?  @db.Text
+  composition       String?  @db.Text
+  suggestedColors   String?
+  imageStyle        String?
+  aiImagePrompt     String?  @db.Text
+  clickReason       String?  @db.Text
+  riskNote          String?
+  abTestSuggestion  String?
+  pipelineSessionId String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model PatternAnalysis {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  niche             String
+  query             String?
+  videosAnalyzed    Int      @default(0)
+  analysisResult    String   @db.Text
+  pipelineSessionId String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model GrowthPlan {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  niche             String
+  channelLevel      String?
+  planResult        String   @db.Text
+  pipelineSessionId String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([userId])
 }
