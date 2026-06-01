@@ -5,8 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, Globe, Calendar, Filter, TrendingUp, ExternalLink, Bookmark,
   Loader2, AlertCircle, Eye, ThumbsUp, MessageSquare, Users, ChevronDown,
-  ChevronUp, Sparkles, DollarSign, Zap, Clock, BarChart3, X
+  ChevronUp, Sparkles, DollarSign, Zap, Clock, BarChart3, X, MessageSquareText
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 interface VideoResult {
   youtubeVideoId: string;
@@ -556,6 +557,20 @@ export default function MarketIntelligencePage() {
                             <Sparkles className="h-3 w-3" />
                           )}
                           Analisar com IA
+                        </button>
+                        <button
+                          onClick={() => {
+                            const params = new URLSearchParams({
+                              videoId: video.youtubeVideoId,
+                              title: video.title,
+                              channel: video.channelTitle,
+                            });
+                            window.location.href = `/comment-intelligence?${params.toString()}`;
+                          }}
+                          className="text-xs px-3 py-1.5 rounded-md bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/20 flex items-center gap-1.5 transition-colors"
+                        >
+                          <MessageSquareText className="h-3 w-3" />
+                          Comentários
                         </button>
                       </div>
                     </div>

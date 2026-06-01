@@ -33,6 +33,9 @@ model User {
   growthPlans        GrowthPlan[]
   apiProvider        String?
   apiKey             String?
+  youtubeComments    YouTubeComment[]
+  commentAnalyses    CommentAnalysis[]
+  infoproductIdeas   InfoproductIdea[]
 }
 
 model Account {
@@ -328,6 +331,91 @@ model PatternAnalysis {
   updatedAt         DateTime @updatedAt
 
   @@index([userId])
+}
+
+model YouTubeComment {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  youtubeVideoId    String
+  youtubeCommentId  String
+  authorDisplayName String?
+  text              String   @db.Text
+  likeCount         Int      @default(0)
+  publishedAt       DateTime?
+  updatedAt         DateTime?
+  isReply           Boolean  @default(false)
+  parentCommentId   String?
+  isUseful          Boolean  @default(true)
+  detectedSentiment String?
+  detectedTheme     String?
+  createdAt         DateTime @default(now())
+
+  @@unique([userId, youtubeCommentId])
+  @@index([userId])
+  @@index([youtubeVideoId])
+}
+
+model CommentAnalysis {
+  id                     String   @id @default(cuid())
+  userId                 String
+  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  youtubeVideoId         String
+  videoTitle             String?
+  channelTitle           String?
+  totalCommentsCollected Int      @default(0)
+  usefulCommentsCount    Int      @default(0)
+  spamCommentsCount      Int      @default(0)
+  topPains               String?  @db.Text
+  topDesires             String?  @db.Text
+  recurringQuestions     String?  @db.Text
+  objections             String?  @db.Text
+  fears                  String?  @db.Text
+  limitingBeliefs        String?  @db.Text
+  audienceLanguage       String?  @db.Text
+  marketInsights         String?  @db.Text
+  confidenceLevel        String?
+  fullAnalysis           String?  @db.Text
+  infoproductIdeas       InfoproductIdea[]
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@index([userId])
+  @@index([youtubeVideoId])
+}
+
+model InfoproductIdea {
+  id                   String   @id @default(cuid())
+  userId               String
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  youtubeVideoId       String?
+  commentAnalysisId    String?
+  commentAnalysis      CommentAnalysis? @relation(fields: [commentAnalysisId], references: [id], onDelete: SetNull)
+  name                 String
+  productType          String?
+  targetAudience       String?  @db.Text
+  mainPain             String?  @db.Text
+  mainDesire           String?  @db.Text
+  promise              String?  @db.Text
+  uniqueMechanism      String?  @db.Text
+  recommendedFormat    String?
+  suggestedModules     String?  @db.Text
+  suggestedTicket      String?
+  opportunityScore     Int      @default(0)
+  scoreReason          String?  @db.Text
+  productionEase       Int      @default(0)
+  salesPotential       Int      @default(0)
+  marketRisk           String?  @db.Text
+  expectedObjections   String?  @db.Text
+  leadMagnetIdea       String?  @db.Text
+  validationOffer      String?  @db.Text
+  youtubeSalesStrategy String?  @db.Text
+  saved                Boolean  @default(false)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([userId])
+  @@index([commentAnalysisId])
 }
 
 model GrowthPlan {
