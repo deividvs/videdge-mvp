@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Call LLM API
-    const llmRes = await fetch('https://api.abacus.ai/v1/chat/completions', {
+    const llmRes = await fetch('https://apps.abacus.ai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
