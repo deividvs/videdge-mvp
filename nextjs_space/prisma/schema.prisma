@@ -31,6 +31,8 @@ model User {
   thumbnailConcepts  ThumbnailConcept[]
   patternAnalyses    PatternAnalysis[]
   growthPlans        GrowthPlan[]
+  apiProvider        String?
+  apiKey             String?
 }
 
 model Account {

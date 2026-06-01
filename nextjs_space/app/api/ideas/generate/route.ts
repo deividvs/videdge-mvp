@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { getLLMConfig, callLLMStreaming } from '@/lib/llm-config';
 
 export async function POST(request: NextRequest) {
   try {
@@ -49,23 +50,12 @@ Gere exatamente 10 ideias. viralPotential e productionDifficulty são inteiros d
 
 Lembre-se: responda APENAS com JSON válido, sem code blocks ou markdown.`;
 
-    const response = await fetch('https://apps.abacus.ai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.ABACUSAI_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: 'gpt-5.4-mini',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
-        ],
-        stream: true,
-        max_tokens: 4000,
-        temperature: 0.8,
-        response_format: { type: 'json_object' },
-      }),
+    const userId = (session.user as any)?.id;
+    const llmConfig = await getLLMConfig(userId);
+    const response = await callLLMStreaming(llmConfig, systemPrompt, userPrompt, {
+      temperature: 0.8,
+      max_tokens: 4000,
+      response_format: llmConfig.provider !== 'claude' ? { type: 'json_object' } : undefined,
     });
 
     if (!response.ok) {

@@ -4,6 +4,7 @@ import { NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { getLLMConfig, callLLMStreaming } from '@/lib/llm-config';
 
 export async function POST(request: NextRequest) {
   try {
@@ -52,23 +53,11 @@ Responda EXCLUSIVAMENTE em JSON válido. Sem markdown, sem code blocks.
 
 Crie um roteiro detalhado com narração completa para cada seção. Responda APENAS com JSON válido.`;
 
-    const response = await fetch('https://apps.abacus.ai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.ABACUSAI_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: 'gpt-5.4-mini',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
-        ],
-        stream: true,
-        max_tokens: 4000,
-        temperature: 0.7,
-        response_format: { type: 'json_object' },
-      }),
+    const llmConfig = await getLLMConfig(userId);
+    const response = await callLLMStreaming(llmConfig, systemPrompt, userPrompt, {
+      temperature: 0.7,
+      max_tokens: 4000,
+      response_format: llmConfig.provider !== 'claude' ? { type: 'json_object' } : undefined,
     });
 
     if (!response.ok) {

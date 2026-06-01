@@ -8,6 +8,7 @@ import {
   getStage1Prompt, getStage2Prompt, getStage3Prompt,
   getStage4Prompt, getStage5Prompt, YouTubeDataContext,
 } from '@/lib/pipeline-prompts';
+import { getLLMConfig, callLLM, extractContent } from '@/lib/llm-config';
 
 export async function POST(request: NextRequest) {
   try {
@@ -91,21 +92,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Call LLM API
-    const llmRes = await fetch('https://apps.abacus.ai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.ABACUSAI_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: 'gpt-5.4-mini',
-        messages: [
-          { role: 'system', content: promptData.system },
-          { role: 'user', content: promptData.user },
-        ],
-        temperature: 0.7,
-        max_tokens: 4000,
-      }),
+    const llmConfig = await getLLMConfig(userId);
+    const llmRes = await callLLM(llmConfig, promptData.system, promptData.user, {
+      temperature: 0.7,
+      max_tokens: 4000,
     });
 
     if (!llmRes.ok) {
@@ -115,7 +105,7 @@ export async function POST(request: NextRequest) {
     }
 
     const llmData = await llmRes.json();
-    const content = llmData.choices?.[0]?.message?.content || '{}';
+    const content = extractContent(llmConfig, llmData) || '{}';
 
     let result;
     try {

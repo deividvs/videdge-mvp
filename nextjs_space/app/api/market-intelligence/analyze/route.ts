@@ -4,6 +4,7 @@ import { NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { getLLMConfig, callLLM, extractContent } from '@/lib/llm-config';
 
 export async function POST(request: NextRequest) {
   try {
@@ -63,21 +64,10 @@ Descrição: ${description || 'N/A'}
 
 Forneça uma análise completa desta oportunidade.`;
 
-    const llmRes = await fetch('https://apps.abacus.ai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.ABACUSAI_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: 'gpt-5.4-mini',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
-        ],
-        temperature: 0.7,
-        max_tokens: 3000,
-      }),
+    const llmConfig = await getLLMConfig(userId);
+    const llmRes = await callLLM(llmConfig, systemPrompt, userPrompt, {
+      temperature: 0.7,
+      max_tokens: 3000,
     });
 
     if (!llmRes.ok) {
@@ -87,7 +77,7 @@ Forneça uma análise completa desta oportunidade.`;
     }
 
     const llmData = await llmRes.json();
-    const content = llmData.choices?.[0]?.message?.content || '{}';
+    const content = extractContent(llmConfig, llmData) || '{}';
 
     let analysis;
     try {
