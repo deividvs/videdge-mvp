@@ -8,6 +8,39 @@ import { searchYouTubeVideos, getVideoStats, getChannelStats, getPublishedAfterD
 import { calculateViralScore, calculateViewsPerDay, calculateViewsSubscriberRatio, calculateEngagementRate } from '@/lib/viral-score';
 import { getRPMForNiche, estimateRevenue } from '@/lib/revenue-estimator';
 
+/**
+ * Extract video ID from various YouTube URL formats or raw ID.
+ */
+function extractVideoId(input: string): string | null {
+  const trimmed = input.trim();
+  
+  // Raw 11-char video ID
+  if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) return trimmed;
+
+  try {
+    const url = new URL(trimmed);
+    // youtube.com/watch?v=ID
+    if (url.hostname.includes('youtube.com')) {
+      const v = url.searchParams.get('v');
+      if (v) return v;
+      // youtube.com/embed/ID or youtube.com/v/ID or youtube.com/shorts/ID
+      const pathMatch = url.pathname.match(/\/(embed|v|shorts)\/([a-zA-Z0-9_-]{11})/);
+      if (pathMatch) return pathMatch[2];
+    }
+    // youtu.be/ID
+    if (url.hostname === 'youtu.be') {
+      const id = url.pathname.slice(1).split('/')[0];
+      if (id && /^[a-zA-Z0-9_-]{11}$/.test(id)) return id;
+    }
+  } catch {
+    // Not a URL, check if it contains a video ID pattern
+    const match = trimmed.match(/(?:v=|\/)([a-zA-Z0-9_-]{11})/);
+    if (match) return match[1];
+  }
+
+  return null;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -16,37 +49,52 @@ export async function POST(request: NextRequest) {
     if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
 
     const body = await request.json();
-    const { query, country, language, period, category, maxResults, minViews, maxSubscribers, minViralScore } = body || {};
-
-    if (!query) return NextResponse.json({ error: 'Palavra-chave é obrigatória' }, { status: 400 });
-
-    // Build search query with category context
-    let searchQuery = query;
-    if (category && category !== 'outro') {
-      searchQuery = `${query} ${category}`;
-    }
+    const { query, country, language, period, category, maxResults, minViews, maxSubscribers, minViralScore, videoUrl } = body || {};
 
     // Get user's YouTube API key
     const ytApiKey = await getYoutubeApiKey(userId);
 
-    // Search YouTube
-    const publishedAfter = period ? getPublishedAfterDate(period) : undefined;
-    const searchResults = await searchYouTubeVideos(searchQuery, {
-      maxResults: Math.min(maxResults || 25, 50),
-      regionCode: country || undefined,
-      relevanceLanguage: language || undefined,
-      publishedAfter,
-      order: 'viewCount',
-      apiKey: ytApiKey,
-    });
+    let videoStats;
+    let searchQuery = query || '';
 
-    if (searchResults.length === 0) {
-      return NextResponse.json({ videos: [], channels: [], message: 'Nenhum vídeo encontrado' });
+    // Direct video URL/ID mode
+    if (videoUrl) {
+      const extractedId = extractVideoId(videoUrl);
+      if (!extractedId) {
+        return NextResponse.json({ error: 'URL ou ID de vídeo inválido. Use um link do YouTube ou o ID do vídeo.' }, { status: 400 });
+      }
+      videoStats = await getVideoStats([extractedId], ytApiKey);
+      if (!videoStats || videoStats.length === 0) {
+        return NextResponse.json({ error: 'Vídeo não encontrado. Verifique a URL ou o ID informado.' }, { status: 404 });
+      }
+    } else {
+      // Keyword search mode
+      if (!query) return NextResponse.json({ error: 'Palavra-chave é obrigatória' }, { status: 400 });
+
+      // Build search query with category context
+      if (category && category !== 'outro') {
+        searchQuery = `${query} ${category}`;
+      }
+
+      // Search YouTube
+      const publishedAfter = period ? getPublishedAfterDate(period) : undefined;
+      const searchResults = await searchYouTubeVideos(searchQuery, {
+        maxResults: Math.min(maxResults || 25, 50),
+        regionCode: country || undefined,
+        relevanceLanguage: language || undefined,
+        publishedAfter,
+        order: 'viewCount',
+        apiKey: ytApiKey,
+      });
+
+      if (searchResults.length === 0) {
+        return NextResponse.json({ videos: [], channels: [], message: 'Nenhum vídeo encontrado' });
+      }
+
+      // Get video stats
+      const videoIds = searchResults.map(v => v.videoId);
+      videoStats = await getVideoStats(videoIds, ytApiKey);
     }
-
-    // Get video stats
-    const videoIds = searchResults.map(v => v.videoId);
-    const videoStats = await getVideoStats(videoIds, ytApiKey);
 
     // Get unique channel stats
     const uniqueChannelIds = [...new Set(videoStats.map(v => v.channelId).filter(Boolean))];

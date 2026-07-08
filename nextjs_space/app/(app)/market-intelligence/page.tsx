@@ -5,7 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, Globe, Calendar, Filter, TrendingUp, ExternalLink, Bookmark,
   Loader2, AlertCircle, Eye, ThumbsUp, MessageSquare, Users, ChevronDown,
-  ChevronUp, Sparkles, DollarSign, Zap, Clock, BarChart3, X, MessageSquareText
+  ChevronUp, Sparkles, DollarSign, Zap, Clock, BarChart3, X, MessageSquareText,
+  Link2, Youtube
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -97,8 +98,12 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(days / 365)} anos`;
 }
 
+type SearchMode = 'keyword' | 'url';
+
 export default function MarketIntelligencePage() {
+  const [searchMode, setSearchMode] = useState<SearchMode>('keyword');
   const [query, setQuery] = useState('');
+  const [videoUrl, setVideoUrl] = useState('');
   const [country, setCountry] = useState('');
   const [language, setLanguage] = useState('');
   const [period, setPeriod] = useState('30d');
@@ -121,7 +126,8 @@ export default function MarketIntelligencePage() {
   const [analysisVideo, setAnalysisVideo] = useState<string | null>(null);
 
   const handleSearch = useCallback(async () => {
-    if (!query.trim()) return;
+    if (searchMode === 'keyword' && !query.trim()) return;
+    if (searchMode === 'url' && !videoUrl.trim()) return;
     setLoading(true);
     setError('');
     setSearched(true);
@@ -130,20 +136,24 @@ export default function MarketIntelligencePage() {
     setSavedIds(new Set());
 
     try {
+      const payload: any = searchMode === 'url'
+        ? { videoUrl: videoUrl.trim() }
+        : {
+            query: query.trim(),
+            country: country || undefined,
+            language: language || undefined,
+            period,
+            category: category || undefined,
+            maxResults,
+            minViews: minViews ? Number(minViews) : undefined,
+            maxSubscribers: maxSubscribers ? Number(maxSubscribers) : undefined,
+            minViralScore: minViralScore ? Number(minViralScore) : undefined,
+          };
+
       const res = await fetch('/api/market-intelligence/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          query: query.trim(),
-          country: country || undefined,
-          language: language || undefined,
-          period,
-          category: category || undefined,
-          maxResults,
-          minViews: minViews ? Number(minViews) : undefined,
-          maxSubscribers: maxSubscribers ? Number(maxSubscribers) : undefined,
-          minViralScore: minViralScore ? Number(minViralScore) : undefined,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
@@ -155,7 +165,7 @@ export default function MarketIntelligencePage() {
     } finally {
       setLoading(false);
     }
-  }, [query, country, language, period, category, maxResults, minViews, maxSubscribers, minViralScore]);
+  }, [searchMode, query, videoUrl, country, language, period, category, maxResults, minViews, maxSubscribers, minViralScore]);
 
   const saveOpportunity = useCallback(async (video: VideoResult) => {
     setSavingId(video.youtubeVideoId);
@@ -238,29 +248,81 @@ export default function MarketIntelligencePage() {
 
       {/* Search Form */}
       <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              placeholder="Pesquisar nicho ou palavra-chave..."
-              className="w-full pl-10 pr-4 py-2.5 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500/40"
-            />
-          </div>
+        {/* Mode Toggle */}
+        <div className="flex items-center gap-1 p-1 bg-background rounded-lg border border-border w-fit">
           <button
-            onClick={handleSearch}
-            disabled={loading || !query.trim()}
-            className="px-6 py-2.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium flex items-center gap-2 transition-colors"
+            onClick={() => setSearchMode('keyword')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              searchMode === 'keyword'
+                ? 'bg-purple-600 text-white'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
           >
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-            Pesquisar
+            <Search className="h-3.5 w-3.5" />
+            Palavra-chave
+          </button>
+          <button
+            onClick={() => setSearchMode('url')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              searchMode === 'url'
+                ? 'bg-red-600 text-white'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <Youtube className="h-3.5 w-3.5" />
+            URL do Vídeo
           </button>
         </div>
 
-        {/* Quick Filters */}
+        {/* Search Input */}
+        {searchMode === 'keyword' ? (
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                placeholder="Pesquisar nicho ou palavra-chave..."
+                className="w-full pl-10 pr-4 py-2.5 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500/40"
+              />
+            </div>
+            <button
+              onClick={handleSearch}
+              disabled={loading || !query.trim()}
+              className="px-6 py-2.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium flex items-center gap-2 transition-colors"
+            >
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+              Pesquisar
+            </button>
+          </div>
+        ) : (
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex-1 relative">
+              <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input
+                type="text"
+                value={videoUrl}
+                onChange={(e) => setVideoUrl(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                placeholder="Cole a URL do vídeo do YouTube ou o ID (ex: dQw4w9WgXcQ)"
+                className="w-full pl-10 pr-4 py-2.5 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500/40 focus:border-red-500/40"
+              />
+            </div>
+            <button
+              onClick={handleSearch}
+              disabled={loading || !videoUrl.trim()}
+              className="px-6 py-2.5 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium flex items-center gap-2 transition-colors"
+            >
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Youtube className="h-4 w-4" />}
+              Analisar Vídeo
+            </button>
+          </div>
+        )}
+
+        {/* Quick Filters — only for keyword mode */}
+        {searchMode === 'keyword' && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <select
             value={country}
@@ -292,73 +354,86 @@ export default function MarketIntelligencePage() {
             {CATEGORIES.map(c => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
           </select>
         </div>
+        )}
 
-        {/* Advanced Filters Toggle */}
-        <button
-          onClick={() => setShowAdvanced(!showAdvanced)}
-          className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
-        >
-          <Filter className="h-3.5 w-3.5" />
-          Filtros avançados
-          {showAdvanced ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-        </button>
-
-        <AnimatePresence>
-          {showAdvanced && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="overflow-hidden"
+        {/* Advanced Filters Toggle — only for keyword mode */}
+        {searchMode === 'keyword' && (
+          <>
+            <button
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
             >
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
-                <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">Max resultados</label>
-                  <input
-                    type="number"
-                    value={maxResults}
-                    onChange={(e) => setMaxResults(Number(e.target.value))}
-                    min={5}
-                    max={50}
-                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/40"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">Views mínimas</label>
-                  <input
-                    type="number"
-                    value={minViews}
-                    onChange={(e) => setMinViews(e.target.value)}
-                    placeholder="Ex: 10000"
-                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/40"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">Inscritos máximos</label>
-                  <input
-                    type="number"
-                    value={maxSubscribers}
-                    onChange={(e) => setMaxSubscribers(e.target.value)}
-                    placeholder="Ex: 100000"
-                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/40"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">Viral Score mínimo</label>
-                  <input
-                    type="number"
-                    value={minViralScore}
-                    onChange={(e) => setMinViralScore(e.target.value)}
-                    placeholder="Ex: 40"
-                    min={0}
-                    max={100}
-                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/40"
-                  />
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              <Filter className="h-3.5 w-3.5" />
+              Filtros avançados
+              {showAdvanced ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+            </button>
+
+            <AnimatePresence>
+              {showAdvanced && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Max resultados</label>
+                      <input
+                        type="number"
+                        value={maxResults}
+                        onChange={(e) => setMaxResults(Number(e.target.value))}
+                        min={5}
+                        max={50}
+                        className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Views mínimas</label>
+                      <input
+                        type="number"
+                        value={minViews}
+                        onChange={(e) => setMinViews(e.target.value)}
+                        placeholder="Ex: 10000"
+                        className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Inscritos máximos</label>
+                      <input
+                        type="number"
+                        value={maxSubscribers}
+                        onChange={(e) => setMaxSubscribers(e.target.value)}
+                        placeholder="Ex: 100000"
+                        className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Viral Score mínimo</label>
+                      <input
+                        type="number"
+                        value={minViralScore}
+                        onChange={(e) => setMinViralScore(e.target.value)}
+                        placeholder="Ex: 40"
+                        min={0}
+                        max={100}
+                        className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                      />
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </>
+        )}
+
+        {/* URL mode hint */}
+        {searchMode === 'url' && (
+          <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+            <AlertCircle className="h-3.5 w-3.5" />
+            Insira qualquer URL do YouTube (watch, shorts, embed) ou o ID do vídeo diretamente. Sem filtro de período.
+          </p>
+        )}
       </div>
 
       {/* Error */}
