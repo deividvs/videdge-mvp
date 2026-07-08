@@ -85,7 +85,8 @@ export function estimateMonthlyViews(
   };
 }
 
-export function getRPMForNiche(niche: string): RPMValues {
+export function getRPMForNiche(niche: string | undefined | null): RPMValues {
+  if (!niche) return DEFAULT_RPM_BENCHMARKS['outro'];
   const normalized = niche.toLowerCase().trim();
   // Try exact match first
   if (DEFAULT_RPM_BENCHMARKS[normalized]) return DEFAULT_RPM_BENCHMARKS[normalized];
