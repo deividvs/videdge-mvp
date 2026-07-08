@@ -732,42 +732,49 @@ export default function CommentIntelligencePage() {
 
                                       {/* Action Buttons */}
                                       <div className="flex flex-wrap gap-2 pt-3 border-t border-border">
-                                        {analysisId && (
+                                        {idea._dbId && (
                                           <button
-                                            onClick={() => {
-                                              // We need the DB id for this idea - use analysisId + index
-                                              // For now, save via API using the analysis data
-                                              toast.info('Produto salvo na análise!');
-                                            }}
-                                            className="px-3 py-1.5 rounded-md text-xs bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5 transition-colors"
+                                            onClick={() => saveIdea(idea._dbId)}
+                                            disabled={savingIdea === idea._dbId}
+                                            className="px-3 py-1.5 rounded-md text-xs bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5 transition-colors disabled:opacity-50"
                                           >
-                                            <Save className="h-3 w-3" /> Salvar Produto
+                                            {savingIdea === idea._dbId ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                                            Salvar Produto
                                           </button>
                                         )}
-                                        <button
-                                          onClick={() => idea._dbId && generateContent(idea._dbId, 'offer')}
-                                          disabled={!!generatingContent}
-                                          className="px-3 py-1.5 rounded-md text-xs bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/20 flex items-center gap-1.5 transition-colors disabled:opacity-50"
-                                        >
-                                          {generatingContent === `${idea._dbId}-offer` ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
-                                          Gerar Oferta
-                                        </button>
-                                        <button
-                                          onClick={() => idea._dbId && generateContent(idea._dbId, 'vsl')}
-                                          disabled={!!generatingContent}
-                                          className="px-3 py-1.5 rounded-md text-xs bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/20 flex items-center gap-1.5 transition-colors disabled:opacity-50"
-                                        >
-                                          {generatingContent === `${idea._dbId}-vsl` ? <Loader2 className="h-3 w-3 animate-spin" /> : <Video className="h-3 w-3" />}
-                                          Gerar VSL
-                                        </button>
-                                        <button
-                                          onClick={() => idea._dbId && generateContent(idea._dbId, 'salespage')}
-                                          disabled={!!generatingContent}
-                                          className="px-3 py-1.5 rounded-md text-xs bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 flex items-center gap-1.5 transition-colors disabled:opacity-50"
-                                        >
-                                          {generatingContent === `${idea._dbId}-salespage` ? <Loader2 className="h-3 w-3 animate-spin" /> : <Globe className="h-3 w-3" />}
-                                          Gerar Página de Vendas
-                                        </button>
+                                        {idea._dbId && (
+                                          <button
+                                            onClick={() => generateContent(idea._dbId, 'offer')}
+                                            disabled={!!generatingContent}
+                                            className="px-3 py-1.5 rounded-md text-xs bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/20 flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                                          >
+                                            {generatingContent === `${idea._dbId}-offer` ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                                            Gerar Oferta
+                                          </button>
+                                        )}
+                                        {idea._dbId && (
+                                          <button
+                                            onClick={() => generateContent(idea._dbId, 'vsl')}
+                                            disabled={!!generatingContent}
+                                            className="px-3 py-1.5 rounded-md text-xs bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/20 flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                                          >
+                                            {generatingContent === `${idea._dbId}-vsl` ? <Loader2 className="h-3 w-3 animate-spin" /> : <Video className="h-3 w-3" />}
+                                            Gerar VSL
+                                          </button>
+                                        )}
+                                        {idea._dbId && (
+                                          <button
+                                            onClick={() => generateContent(idea._dbId, 'salespage')}
+                                            disabled={!!generatingContent}
+                                            className="px-3 py-1.5 rounded-md text-xs bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                                          >
+                                            {generatingContent === `${idea._dbId}-salespage` ? <Loader2 className="h-3 w-3 animate-spin" /> : <Globe className="h-3 w-3" />}
+                                            Gerar Página de Vendas
+                                          </button>
+                                        )}
+                                        {!idea._dbId && (
+                                          <p className="text-xs text-muted-foreground italic">Reanalise os comentários para habilitar as ações.</p>
+                                        )}
                                       </div>
 
                                       {/* Generated Content Display */}

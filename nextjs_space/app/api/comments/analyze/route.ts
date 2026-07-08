@@ -218,10 +218,11 @@ Todas as respostas em português brasileiro.`;
       },
     });
 
-    // Save InfoproductIdeas to DB
+    // Save InfoproductIdeas to DB and collect their IDs
     if (analysis.infoproductIdeas?.length) {
-      for (const idea of analysis.infoproductIdeas) {
-        await prisma.infoproductIdea.create({
+      for (let i = 0; i < analysis.infoproductIdeas.length; i++) {
+        const idea = analysis.infoproductIdeas[i];
+        const saved = await prisma.infoproductIdea.create({
           data: {
             userId,
             youtubeVideoId: videoId,
@@ -247,6 +248,8 @@ Todas as respostas em português brasileiro.`;
             youtubeSalesStrategy: idea.youtubeSalesStrategy || null,
           },
         });
+        // Attach the DB id so the frontend can use it for save/generate actions
+        analysis.infoproductIdeas[i]._dbId = saved.id;
       }
     }
 
