@@ -119,7 +119,8 @@ export async function POST(request: NextRequest) {
       });
 
       // Revenue estimate for channel
-      const rpm = getRPMForNiche(category || query);
+      const nicheLabel = category || query || video.channelTitle || 'outro';
+      const rpm = getRPMForNiche(nicheLabel);
       const channelMonthlyViews = channel ? Math.round(channel.viewCount / Math.max(1, channel.videoCount) * 4) : 0;
       const revenue = estimateRevenue(channelMonthlyViews, rpm);
 
@@ -142,7 +143,7 @@ export async function POST(request: NextRequest) {
         viewsSubscriberRatio: vsr,
         engagementRate: er,
         subscriberCount: subs,
-        detectedNiche: category || query,
+        detectedNiche: nicheLabel,
         revenueConservative: revenue.conservative,
         revenueAverage: revenue.average,
         revenueAggressive: revenue.aggressive,
@@ -162,7 +163,7 @@ export async function POST(request: NextRequest) {
     await prisma.youTubeSearch.create({
       data: {
         userId,
-        query,
+        query: query || videoUrl || '',
         country: country || null,
         language: language || null,
         period: period || null,
@@ -205,14 +206,14 @@ export async function POST(request: NextRequest) {
           viewsSubscriberRatio: video.viewsSubscriberRatio,
           engagementRate: video.engagementRate,
           detectedNiche: video.detectedNiche,
-          searchQuery: query,
+          searchQuery: query || videoUrl || '',
         },
       });
     }
 
     // Upsert channels
     const channelList = channelStats.map(ch => {
-      const rpm = getRPMForNiche(category || query);
+      const rpm = getRPMForNiche(category || query || 'outro');
       const monthlyViews = Math.round(ch.viewCount / Math.max(1, ch.videoCount) * 4);
       const revenue = estimateRevenue(monthlyViews, rpm);
       return {
