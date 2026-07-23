@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, Lightbulb, FileText, Kanban, FolderKanban, Settings, LogOut, Zap, Menu, X, TrendingUp, Bookmark, Workflow, MessageSquareText } from 'lucide-react';
+import { LayoutDashboard, Lightbulb, FileText, Kanban, FolderKanban, Settings, LogOut, Zap, Menu, X, TrendingUp, Bookmark, Workflow, MessageSquareText, Package } from 'lucide-react';
 import { useState } from 'react';
 
 const navItems = [
@@ -16,6 +16,7 @@ const navItems = [
   { href: '/board', label: 'Production Board', icon: Kanban },
   { href: '/projects', label: 'Projects', icon: FolderKanban },
   { href: '/comment-intelligence', label: 'Comment Intelligence', icon: MessageSquareText },
+  { href: '/infoproducts', label: 'Infoprodutos', icon: Package },
   { href: '/content-pipeline', label: 'Esteira de Conteúdo', icon: Workflow },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];

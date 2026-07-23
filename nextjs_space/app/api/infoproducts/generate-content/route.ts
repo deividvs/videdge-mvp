@@ -75,6 +75,20 @@ export async function POST(request: NextRequest) {
       result = { rawContent: content };
     }
 
+    // Persist the generated content to the DB so the user can work on it later.
+    const fieldMap: Record<string, string> = {
+      offer: 'generatedOffer',
+      vsl: 'generatedVsl',
+      salespage: 'generatedSalesPage',
+    };
+    const field = fieldMap[type];
+    if (field) {
+      await prisma.infoproductIdea.update({
+        where: { id: ideaId },
+        data: { [field]: JSON.stringify(result), saved: true },
+      });
+    }
+
     return new Response(JSON.stringify({ type, result }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },

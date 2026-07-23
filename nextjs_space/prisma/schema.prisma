@@ -412,6 +412,9 @@ model InfoproductIdea {
   validationOffer      String?  @db.Text
   youtubeSalesStrategy String?  @db.Text
   saved                Boolean  @default(false)
+  generatedOffer       String?  @db.Text
+  generatedVsl         String?  @db.Text
+  generatedSalesPage   String?  @db.Text
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 

@@ -163,7 +163,7 @@ export default function CommentIntelligencePage() {
         body: JSON.stringify({ ideaId }),
       });
       if (!res.ok) throw new Error('Erro ao salvar');
-      toast.success('Produto salvo!');
+      toast.success('Produto salvo! Acesse em "Infoprodutos" no menu lateral.');
     } catch (err: any) {
       toast.error(err.message);
     } finally {
